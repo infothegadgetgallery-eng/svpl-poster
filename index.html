@@ -197,13 +197,6 @@ function drawCanvas() {
   const name = document.getElementById("name").value;
   const village = document.getElementById("village").value;
 
-  // 🎨 Fill background (NO black bars)
-  const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
-  gradient.addColorStop(0, "#0b1c2c");
-  gradient.addColorStop(1, "#132f4c");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
   // -------- ✅ ASPECT FIT --------
   const imgRatio = baseImage.width / baseImage.height;
   const canvasRatio = WIDTH / HEIGHT;
@@ -222,7 +215,16 @@ function drawCanvas() {
     offsetY = 0;
   }
 
-  ctx.drawImage(baseImage, offsetX, offsetY, drawWidth, drawHeight);
+  // 🔥 Resize canvas to actual image size (NO bars)
+canvas.width = drawWidth * ratio;
+canvas.height = drawHeight * ratio;
+
+canvas.style.width = "100%";
+canvas.style.height = "auto";
+
+ctx.setTransform(ratio, 0, 0, ratio, 0, 0); 
+
+  ctx.drawImage(baseImage, 0, 0, drawWidth, drawHeight);
 
   // -------- 🎯 SCALE FACTOR --------
   const scaleX = drawWidth / 1080;
@@ -241,8 +243,8 @@ function drawCanvas() {
 
   ctx.fillText(
     name,
-    offsetX + (100 * scaleX),
-    offsetY + (615 * scaleY)
+    (100 * scaleX),
+    (615 * scaleY)
   );
 
   // -------- VILLAGE --------
@@ -256,14 +258,14 @@ function drawCanvas() {
 
   ctx.fillText(
     village,
-    offsetX + (100 * scaleX),
-    offsetY + (655 * scaleY)
+    (100 * scaleX),
+    (655 * scaleY)
   );
 
   // -------- USER IMAGE --------
   if (userImage && userImage.complete) {
-  const cx = offsetX + (760 * scaleX);
-  const cy = offsetY + (597 * scaleY);
+  const cx = (760 * scaleX);
+  const cy = (597 * scaleY);
   const radius = 175 * Math.min(scaleX, scaleY);
 
   const imgRatio = userImage.width / userImage.height;
@@ -296,28 +298,7 @@ function drawCanvas() {
 }
 
 // Load
-baseImage.onload = function () {
-
-  const imgRatio = baseImage.width / baseImage.height;
-
-  if (imgRatio > 1) {
-    WIDTH = 1080;
-    HEIGHT = 1080 / imgRatio;
-  } else {
-    HEIGHT = 1080;
-    WIDTH = 1080 * imgRatio;
-  }
-
-  canvas.width = WIDTH * ratio;
-  canvas.height = HEIGHT * ratio;
-
-  canvas.style.width = "100%";
-  canvas.style.height = "auto";
-
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-
-  drawCanvas();
-};
+baseImage.onload = drawCanvas;
 
 // Download
 function downloadImage() {
