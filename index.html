@@ -296,7 +296,28 @@ function drawCanvas() {
 }
 
 // Load
-baseImage.onload = drawCanvas;
+baseImage.onload = function () {
+
+  const imgRatio = baseImage.width / baseImage.height;
+
+  if (imgRatio > 1) {
+    WIDTH = 1080;
+    HEIGHT = 1080 / imgRatio;
+  } else {
+    HEIGHT = 1080;
+    WIDTH = 1080 * imgRatio;
+  }
+
+  canvas.width = WIDTH * ratio;
+  canvas.height = HEIGHT * ratio;
+
+  canvas.style.width = "100%";
+  canvas.style.height = "auto";
+
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+  drawCanvas();
+};
 
 // Download
 function downloadImage() {
