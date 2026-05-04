@@ -225,20 +225,10 @@ function drawCanvas() {
 
   // 🔥 NO aspect-fit → exact draw (no bars)
   // 🔥 REMOVE SIDE EMPTY SPACE (manual crop)
-const cropX = baseImage.width * 0.06;   // adjust if needed
-const cropY = 0;
-const cropWidth = baseImage.width * 0.88;
-const cropHeight = baseImage.height;
+ctx.drawImage(baseImage, 0, 0, WIDTH, HEIGHT);
 
-ctx.drawImage(
-  baseImage,
-  cropX, cropY, cropWidth, cropHeight,
-  0, 0, WIDTH, HEIGHT
-);
-
-  // SCALE
-  const scaleX = WIDTH / 1080;
-  const scaleY = HEIGHT / 1080;
+const scaleX = WIDTH / 1080;
+const scaleY = HEIGHT / 1080;
 
   // NAME
   let fontSize = 60 * scaleX;
