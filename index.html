@@ -157,18 +157,12 @@ canvas {
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-// Retina fix
+// Retina
 const ratio = window.devicePixelRatio || 1;
-const WIDTH = 1080;
-const HEIGHT = 1080;
 
-canvas.width = WIDTH * ratio;
-canvas.height = HEIGHT * ratio;
-canvas.style.width = "100%";
-canvas.style.height = "auto";
-ctx.scale(ratio, ratio);
-ctx.imageSmoothingEnabled = true;
-ctx.imageSmoothingQuality = "high";
+// 🔥 MAKE DYNAMIC
+let WIDTH = 1080;
+let HEIGHT = 1080;
 
 // Base image
 const baseImage = new Image();
@@ -181,14 +175,44 @@ document.getElementById("name").addEventListener("input", drawCanvas);
 document.getElementById("village").addEventListener("input", drawCanvas);
 
 document.getElementById("upload").addEventListener("change", function(e){
+  const file = e.target.files[0];
+  if (!file) return;
+
   const reader = new FileReader();
   reader.onload = function(event){
     userImage = new Image();
     userImage.onload = drawCanvas;
     userImage.src = event.target.result;
   };
-  reader.readAsDataURL(e.target.files[0]);
+  reader.readAsDataURL(file);
 });
+
+// 🔥 SET CANVAS SIZE ONLY ONCE
+baseImage.onload = function () {
+
+  const imgRatio = baseImage.width / baseImage.height;
+
+  if (imgRatio > 1) {
+    WIDTH = 1080;
+    HEIGHT = 1080 / imgRatio;
+  } else {
+    HEIGHT = 1080;
+    WIDTH = 1080 * imgRatio;
+  }
+
+  canvas.width = WIDTH * ratio;
+  canvas.height = HEIGHT * ratio;
+
+  canvas.style.width = "100%";
+  canvas.style.height = "auto";
+
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+
+  drawCanvas();
+};
 
 // DRAW
 function drawCanvas() {
@@ -197,40 +221,16 @@ function drawCanvas() {
   const name = document.getElementById("name").value;
   const village = document.getElementById("village").value;
 
-  // -------- ✅ ASPECT FIT --------
-  const imgRatio = baseImage.width / baseImage.height;
-  const canvasRatio = WIDTH / HEIGHT;
+  ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-  let drawWidth, drawHeight, offsetX, offsetY;
+  // 🔥 NO aspect-fit → exact draw (no bars)
+  ctx.drawImage(baseImage, 0, 0, WIDTH, HEIGHT);
 
-  if (imgRatio > canvasRatio) {
-    drawWidth = WIDTH;
-    drawHeight = WIDTH / imgRatio;
-    offsetX = 0;
-    offsetY = (HEIGHT - drawHeight) / 2;
-  } else {
-    drawHeight = HEIGHT;
-    drawWidth = HEIGHT * imgRatio;
-    offsetX = (WIDTH - drawWidth) / 2;
-    offsetY = 0;
-  }
+  // SCALE
+  const scaleX = WIDTH / 1080;
+  const scaleY = HEIGHT / 1080;
 
-  // 🔥 Resize canvas to actual image size (NO bars)
-canvas.width = drawWidth * ratio;
-canvas.height = drawHeight * ratio;
-
-canvas.style.width = "100%";
-canvas.style.height = "auto";
-
-ctx.setTransform(ratio, 0, 0, ratio, 0, 0); 
-
-  ctx.drawImage(baseImage, 0, 0, drawWidth, drawHeight);
-
-  // -------- 🎯 SCALE FACTOR --------
-  const scaleX = drawWidth / 1080;
-  const scaleY = drawHeight / 1080;
-
-  // -------- NAME --------
+  // NAME
   let fontSize = 60 * scaleX;
   ctx.font = "bold " + fontSize + "px Arial";
   ctx.fillStyle = "black";
@@ -241,13 +241,9 @@ ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.font = "bold " + fontSize + "px Arial";
   }
 
-  ctx.fillText(
-    name,
-    (100 * scaleX),
-    (615 * scaleY)
-  );
+  ctx.fillText(name, (100 * scaleX), (615 * scaleY));
 
-  // -------- VILLAGE --------
+  // VILLAGE
   let villageFontSize = 45 * scaleX;
   ctx.font = villageFontSize + "px Arial";
 
@@ -256,61 +252,50 @@ ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.font = villageFontSize + "px Arial";
   }
 
-  ctx.fillText(
-    village,
-    (100 * scaleX),
-    (655 * scaleY)
-  );
+  ctx.fillText(village, (100 * scaleX), (655 * scaleY));
 
-  // -------- USER IMAGE --------
+  // USER IMAGE (aspect-fit circle)
   if (userImage && userImage.complete) {
-  const cx = (760 * scaleX);
-  const cy = (597 * scaleY);
-  const radius = 175 * Math.min(scaleX, scaleY);
+    const cx = (760 * scaleX);
+    const cy = (597 * scaleY);
+    const radius = 175 * Math.min(scaleX, scaleY);
 
-  const imgRatio = userImage.width / userImage.height;
+    const imgRatio = userImage.width / userImage.height;
 
-  let drawWidth, drawHeight;
+    let w, h;
 
-  if (imgRatio > 1) {
-    // Image is wider
-    drawWidth = radius * 2;
-    drawHeight = drawWidth / imgRatio;
-  } else {
-    // Image is taller
-    drawHeight = radius * 2;
-    drawWidth = drawHeight * imgRatio;
+    if (imgRatio > 1) {
+      w = radius * 2;
+      h = w / imgRatio;
+    } else {
+      h = radius * 2;
+      w = h * imgRatio;
+    }
+
+    const x = cx - w / 2;
+    const y = cy - h / 2;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.clip();
+
+    ctx.drawImage(userImage, x, y, w, h);
+
+    ctx.restore();
   }
-
-  const drawX = cx - drawWidth / 2;
-  const drawY = cy - drawHeight / 2;
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.clip();
-
-  ctx.drawImage(userImage, drawX, drawY, drawWidth, drawHeight);
-
-  ctx.restore();
-}
 }
 
-// Load
-baseImage.onload = drawCanvas;
-
-// Download
+// DOWNLOAD
 function downloadImage() {
 
   if (!baseImage.complete) {
-  alert("Please wait, image is loading...");
-  return;
-}
+    alert("Please wait, image is loading...");
+    return;
+  }
 
   const dataUrl = canvas.toDataURL("image/png");
 
-  // Detect iPhone Safari
   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   if (isIOS) {
@@ -332,7 +317,6 @@ function downloadImage() {
     document.body.removeChild(link);
   }
 }
-
 </script>
 
 </body>
