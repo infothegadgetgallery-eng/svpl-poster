@@ -224,7 +224,17 @@ function drawCanvas() {
   ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
   // 🔥 NO aspect-fit → exact draw (no bars)
-  ctx.drawImage(baseImage, 0, 0, WIDTH, HEIGHT);
+  // 🔥 REMOVE SIDE EMPTY SPACE (manual crop)
+const cropX = baseImage.width * 0.06;   // adjust if needed
+const cropY = 0;
+const cropWidth = baseImage.width * 0.88;
+const cropHeight = baseImage.height;
+
+ctx.drawImage(
+  baseImage,
+  cropX, cropY, cropWidth, cropHeight,
+  0, 0, WIDTH, HEIGHT
+);
 
   // SCALE
   const scaleX = WIDTH / 1080;
