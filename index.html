@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVPL Poster Generator</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top, #1a2f4d, #0b1c2c);
+  color: white;
+}
+
+.container {
+  max-width: 480px;
+  margin: auto;
+  padding: 20px 15px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.header p {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+/* Glass Card */
+.card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+/* Labels */
+.label {
+  font-size: 13px;
+  margin-top: 10px;
+  opacity: 0.8;
+}
+
+/* Inputs */
+input {
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  background: #1c3550;
+  color: white;
+  transition: 0.3s;
+}
+
+input:focus {
+  background: #24496d;
+}
+
+/* Upload Button */
+.upload-box {
+  margin-top: 10px;
+}
+
+.upload-box input {
+  background: none;
+  padding: 0;
+}
+
+/* Button */
+button {
+  width: 100%;
+  margin-top: 15px;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  background: linear-gradient(135deg, gold, orange);
+  color: black;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Canvas */
+.canvas-wrapper {
+  margin-top: 18px;
+  border-radius: 15px;
+  overflow: hidden;
+  background: #000;
+}
+
+canvas {
+  width: 100%;
+  display: block;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <h1>SVPL Poster Generator</h1>
+    <p>Create your custom poster instantly</p>
+  </div>
+
+  <div class="card">
+
+    <div class="label">Your Name</div>
+    <input type="text" id="name" placeholder="Enter your name">
+
+    <div class="label">Village Name</div>
+    <input type="text" id="village" placeholder="Enter village">
+
+    <div class="label">Upload Photo</div>
+    <div class="upload-box">
+      <input type="file" id="upload" accept="image/*">
+    </div>
+
+    <button onclick="downloadImage()">⬇ Download Poster</button>
+
+    <div class="canvas-wrapper">
+      <canvas id="canvas"></canvas>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+// Retina fix
+const ratio = window.devicePixelRatio || 1;
+const WIDTH = 1080;
+const HEIGHT = 1080;
+
+canvas.width = WIDTH * ratio;
+canvas.height = HEIGHT * ratio;
+canvas.style.width = "100%";
+canvas.style.height = "auto";
+ctx.scale(ratio, ratio);
+ctx.imageSmoothingEnabled = true;
+ctx.imageSmoothingQuality = "high";
+
+// Base image
+const baseImage = new Image();
+baseImage.src = "sample.png";
+
+let userImage = null;
+
+// Inputs
+document.getElementById("name").addEventListener("input", drawCanvas);
+document.getElementById("village").addEventListener("input", drawCanvas);
+
+document.getElementById("upload").addEventListener("change", function(e){
+  const reader = new FileReader();
+  reader.onload = function(event){
+    userImage = new Image();
+    userImage.onload = drawCanvas;
+    userImage.src = event.target.result;
+  };
+  reader.readAsDataURL(e.target.files[0]);
+});
+
+// DRAW
+function drawCanvas() {
+  if (!baseImage.complete) return;
+
+  const name = document.getElementById("name").value;
+  const village = document.getElementById("village").value;
+
+  // 🎨 Fill background (NO black bars)
+  const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
+  gradient.addColorStop(0, "#0b1c2c");
+  gradient.addColorStop(1, "#132f4c");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  // -------- ✅ ASPECT FIT --------
+  const imgRatio = baseImage.width / baseImage.height;
+  const canvasRatio = WIDTH / HEIGHT;
+
+  let drawWidth, drawHeight, offsetX, offsetY;
+
+  if (imgRatio > canvasRatio) {
+    drawWidth = WIDTH;
+    drawHeight = WIDTH / imgRatio;
+    offsetX = 0;
+    offsetY = (HEIGHT - drawHeight) / 2;
+  } else {
+    drawHeight = HEIGHT;
+    drawWidth = HEIGHT * imgRatio;
+    offsetX = (WIDTH - drawWidth) / 2;
+    offsetY = 0;
+  }
+
+  ctx.drawImage(baseImage, offsetX, offsetY, drawWidth, drawHeight);
+
+  // -------- 🎯 SCALE FACTOR --------
+  const scaleX = drawWidth / 1080;
+  const scaleY = drawHeight / 1080;
+
+  // -------- NAME --------
+  let fontSize = 60 * scaleX;
+  ctx.font = "bold " + fontSize + "px Arial";
+  ctx.fillStyle = "black";
+  ctx.textAlign = "left";
+
+  while (ctx.measureText(name).width > 350 * scaleX && fontSize > 10) {
+    fontSize -= 2;
+    ctx.font = "bold " + fontSize + "px Arial";
+  }
+
+  ctx.fillText(
+    name,
+    offsetX + (100 * scaleX),
+    offsetY + (615 * scaleY)
+  );
+
+  // -------- VILLAGE --------
+  let villageFontSize = 45 * scaleX;
+  ctx.font = villageFontSize + "px Arial";
+
+  while (ctx.measureText(village).width > 350 * scaleX && villageFontSize > 10) {
+    villageFontSize -= 2;
+    ctx.font = villageFontSize + "px Arial";
+  }
+
+  ctx.fillText(
+    village,
+    offsetX + (100 * scaleX),
+    offsetY + (655 * scaleY)
+  );
+
+  // -------- USER IMAGE --------
+  if (userImage && userImage.complete) {
+  const cx = offsetX + (760 * scaleX);
+  const cy = offsetY + (597 * scaleY);
+  const radius = 175 * Math.min(scaleX, scaleY);
+
+  const imgRatio = userImage.width / userImage.height;
+
+  let drawWidth, drawHeight;
+
+  if (imgRatio > 1) {
+    // Image is wider
+    drawWidth = radius * 2;
+    drawHeight = drawWidth / imgRatio;
+  } else {
+    // Image is taller
+    drawHeight = radius * 2;
+    drawWidth = drawHeight * imgRatio;
+  }
+
+  const drawX = cx - drawWidth / 2;
+  const drawY = cy - drawHeight / 2;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+
+  ctx.drawImage(userImage, drawX, drawY, drawWidth, drawHeight);
+
+  ctx.restore();
+}
+}
+
+// Load
+baseImage.onload = drawCanvas;
+
+// Download
+function downloadImage() {
+
+  if (!baseImage.complete) {
+  alert("Please wait, image is loading...");
+  return;
+}
+
+  const dataUrl = canvas.toDataURL("image/png");
+
+  // Detect iPhone Safari
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  if (isIOS) {
+    const newTab = window.open();
+    newTab.document.write(`
+      <html>
+        <body style="margin:0">
+          <img src="${dataUrl}" style="width:100%" />
+          <p style="text-align:center">Long press to save</p>
+        </body>
+      </html>
+    `);
+  } else {
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = "SVPL_Poster.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+}
+
+</script>
+
+</body>
+</html>
